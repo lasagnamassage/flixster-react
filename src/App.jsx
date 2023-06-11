@@ -1,33 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 import './App.css'
+import MovieList from './components/MovieList'
+import LoadMore from './components/LoadMore'
+import Search from './components/Search'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [movies, setMovies] = useState()
+  const [page, setPage] = useState(2)
+  const [searchValue, setSearchValue] = useState('');
+  const apiKey = "REPLACE WITH YOUR API KEY";
+  let rootUrl = 'https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&sort_by=popularity.desc&page=';
+  let filterUrl = 'https://api.themoviedb.org/3/search/movie?include_adult=false&language=en-US&page=1';
+  const url = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc" + `&api_key=${apiKey}`
+
+  const handleLoadMore = () => {
+    setPage(page + 1);
+    axios.get(rootUrl + page + `&api_key=${apiKey}`)
+      .then(response => {
+        setMovies(movies.concat(response.data.results))
+      })
+  }
+
+  const handleSearchChange = (event) => {
+    setSearchValue(event.target.value)
+  }
+
+  const handleSearch = () => {
+    let query = searchValue.replace(' ', '+');
+    axios.get(filterUrl + `&api_key=${apiKey}&query=${query}`)
+      .then(response => {
+        setMovies(response.data.results);
+      })
+  }
+
+  useEffect(() => {
+    axios.get(url)
+      .then(response => {
+        setMovies(response.data.results)
+      })
+  }, [])
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count} 
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <header>Flixster</header>
+      <Search 
+        searchValue={searchValue} 
+        handleSearchChange={handleSearchChange}
+        handleSearch={handleSearch} />
+      <MovieList movies={movies} />
+      <LoadMore handleOnClick={handleLoadMore} />
     </>
   )
 }
